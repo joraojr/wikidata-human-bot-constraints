@@ -1,0 +1,86 @@
+---
+title: "Project description"
+author: "Nicolas Ferranti and Jorao Gomes Jr."
+date: "2023-10-15"
+output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The basic ideas behind the project
+
+Wikidata, the largest community-driven RDF knowledge base on the web
+with over 14 billion triples, is a dynamic resource with a thriving user
+base denoted by 23 thousand active users and 1.9 billion edits. Its
+extensive and continuously evolving dataset serves a multitude of
+applications, from semantic search engines to data analysis.
+
+Data quality remains a big concern to the Wikidata community, as
+maintaining accuracy and consistency within this expansive knowledge
+graph is no small task. The Wikidata community, along with automated
+tools and quality control processes, is dedicated to upholding rigorous
+data standards, ensuring that Wikidata remains a valuable and reliable
+resource for a wide range of knowledge-related endeavors. Despite the
+collaborative nature of Wikidata as a public good, distinguishing the
+behavior of human participants from the automatic contributions made by
+Wikidata's bots has proven challenging. This challenge is particularly
+increased when addressing constraint problems within the Wikidata
+knowledge base.
+
+To tackle this issue, our project aims to comprehensively analyze and
+differentiate the contributions of human editors from those made by bot
+editors, with a specific focus on understanding any differences in their
+approaches to solving constraint problems. By shedding light on these
+distinctions, we seek to enhance the overall quality and reliability of
+Wikidata's structured knowledge, ultimately benefiting the diverse range
+of applications that rely on this invaluable resource.
+
+## Research questions/hypotheses
+
+Here we point out some of our initial research questions.
+
+**RQ1**: There are any differences between the constraint violation
+repaired by human users and not bots?
+
+-   We hypothesize that bots have fewer contributions to constraint
+    violation repairs than humans
+
+**RQ2**: Do users behave differently when repairing general and specific
+domains of knowledge?
+
+-   We hypothesize that humans are more comfortable when solving
+    constraint problems inside their domain of knowledge instead of
+    helping in general tasks
+
+## Information on the data and the methods you plan to use for analysis
+
+A preliminary dataset available by [1] will be used and extended to
+include the necessary information to answer the research questions.
+Among the possible methods, we highlight the following ones that could
+be potentially explored for this project:
+
+1.  Cluster analysis
+
+2.  Outliers detection
+
+3.  Correlation causation analysis
+
+4.  Prediction models
+
+5.  Networking Science methods
+
+## A preliminary outline of your presentation
+
+We will present how we extended the current dataset (checking for user
+data) made available by [1] and the results that support our hypotheses.
+
+## References
+
+[1] PELLISSIER TANON, Thomas; BOURGAUX, Camille; SUCHANEK, Fabian.
+Learning how to correct a knowledge base from the edit history. In: The
+World Wide Web Conference. 2019. p. 1465-1475.
