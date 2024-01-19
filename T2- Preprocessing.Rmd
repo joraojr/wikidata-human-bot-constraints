@@ -1,0 +1,98 @@
+---
+title: "Project description"
+author: "Nicolas Ferranti and Jorao Gomes Jr."
+date: "2023-10-15"
+output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+if (!require("data.table")) install.packages("data.table"); library("data.table")
+
+```
+
+```{r}
+
+data <- list(
+  oneOf = "../7712720/constraint-corrections-oneOf.tsv", #14-added
+  singleValue = "../7712720/constraint-corrections-single.tsv", #14-added
+  conflictsWith = "../7712720/constraint-corrections-conflictWith.tsv", #14-added
+  distinctValues = "../7712720/constraint-corrections-distinct.tsv", #10
+  inverse = "../7712720/constraint-corrections-inverse.tsv", #14-added
+  valueRequiresStatement = "../7712720/constraint-corrections-valueRequiresStatement.tsv", #14
+  valueType = "../7712720/constraint-corrections-valueType.tsv",
+  type = "../7712720/constraint-corrections-type.tsv",
+  intemRequiresStatement = "../7712720/constraint-corrections-itemRequiresStatement.tsv" #10
+)
+
+```
+
+```{r}
+
+extract_value <- function(column) {
+  result <- gsub('.*/([^/<>]+)[/<>]$', '\\1', column)
+  return(result)
+}
+
+# df <- data.frame(matrix(ncol=14,nrow=0))
+
+df <- read.csv(data$inverse,
+               sep = "\t",
+               header = FALSE)
+
+df <- df %>%
+  select(V3, V4, V10, V14) %>%
+  setNames(c("subject", "property", "action1", "action2"))%>%
+  mutate(subject = extract_value(subject),
+         property = extract_value(property)
+         )
+
+
+```
+
+
+```{r}
+
+
+df <- df %>%
+  mutate(
+    type = "inverse",
+    total_actions = ifelse(action2 == "" | is.na(action2), 1, 2),
+    action_category = case_when(
+      grepl("deletion", action1, ignore.case = TRUE) &
+        (action2 == "" | is.na(action2)) ~ "DELETION",
+      grepl("addition", action1, ignore.case = TRUE) &
+        (action2 == "" | is.na(action2)) ~ "ADDITION",
+      TRUE ~ "REVALIDATION"
+    )
+  ) %>%
+  select(-action1,-action2)
+
+```
+
+```{r}
+df %>%
+  group_by(subject, property,action_category) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+```
+
+
+
+```{r}
+df %>% filter(subject == "Q4115189" & property == "P21")
+```
+
+
+```{r}
+write.table(df, "preprocessed_file.tsv", sep = "\t",row.names = FALSE, append = TRUE, col.names =FALSE)
+
+```
+
