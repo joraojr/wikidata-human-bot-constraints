@@ -1,0 +1,43 @@
+---
+title: "Research Report: Analyzing Historical Knowledge Graph Repairs"
+author: "Nicolas Ferranti and Jorao Gomes Jr."
+date: "2024-03-20"
+output: pdf_document
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Abstract 
+
+Effective data quality management is pivotal in maintaining the utility and reliability of knowledge graphs. Knowledge graphs, like Wikidata, heavily depend on property constraints to identify and rectify data errors. Historical data repairs can be beneficial for understanding what are the main data issues and what are common repair patterns. In this research report, we present the project of the course Advanced Data Analysis with R, where we analyze historical repairs performed in Wikidata. We also asked ourselves what is the role of humans and bots when it comes to repairs in Wikidata. Preliminary results show that 2/3 of the repairs for a given constraint type are done by humans.
+
+## Introduction
+
+In the world of structured data representation, Knowledge Graphs are powerful tools for organizing and connecting information in a smart way. One common type is RDF (Resource Description Framework) Knowledge Graphs, which provide a standardized method for expressing and linking different data points across various areas.
+
+At the top of the list of open knowledge graphs is Wikidata, a project started by the Wikimedia Foundation. It's a place where people worldwide contribute and manage structured data. Wikidata covers a wide range of topics, from historical figures to scientific concepts. It's used in many ways, such as helping search engines, providing information for Wikipedia's infoboxes, and supporting data-driven research.
+
+Keeping data accurate and relevant is crucial for Wikidata. Since knowledge is always changing and evolving, it's important to constantly check and correct any mistakes. Wikidata uses property constraints to describe how properties should be used and to flag any potential inconsistencies in the data. These constraints help ensure that the data in Wikidata is of good quality and makes sense.
+
+Understanding how data has been corrected in the past can be very important in the context of Wikidata. By looking at past corrections, we can learn about common problems and how they've been fixed. This can help us predict repairs and prevent future mistakes, making sure that Wikidata stays reliable over time.
+
+In this research project, we're going to study how data has been fixed in Wikidata over time using the techniques we've learned in the Advanced Data Analysis with R course. The research questions driving this study are twofold: first, we aim to investigate the feasibility of predicting correction operations for specific constraint types. Second, we seek to clarify the contribution of humans and bots to the Wikidata ecosystem. By addressing these questions, we aim to contribute to the ongoing discourse on data quality management in knowledge representation and shed light on the roles of human and machine interventions in knowledge graph maintenance. More specifically, our questions are:
+
+**RQ1**: Is it possible to predict the action necessary to fix a constraint based on its type?
+**RQ2**: What is the role of humans and bots when it comes to repairs in Wikidata?
+
+Our hypotheses is that human users have a more active role to fix constraint violations than bots, which can be used
+
+## Data collection
+
+## Descriptive analysis of the sample
+
+## Investigation and testing
+
+## Conclusion
+
