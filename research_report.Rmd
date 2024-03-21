@@ -35,6 +35,10 @@ Our hypotheses is that human users have a more active role to fix constraint vio
 
 ## Data collection
 
+The data used in this research was first published by Pellisier et al. [1] when investigating how correction rules could be mined for Wikidata. In our case, we are interested in a statistical analysis over this data. The dataset contains 67M past corrections collected until July, 2018 for ten different Wikidata constraint types.
+
+All the data can be [freely downloaded](https://figshare.com/articles/dataset/Wikidata_Constraints_Violations_-_July_2017/7712720) 
+
 ## Descriptive analysis of the sample
 
 ## Investigation and testing
@@ -108,3 +112,9 @@ Our preliminary results show that around 66% of the repairs for this given const
 
 ## Conclusion
 
+
+## References
+
+[1] PELLISSIER TANON, Thomas; BOURGAUX, Camille; SUCHANEK, Fabian.
+Learning how to correct a knowledge base from the edit history. In: The
+World Wide Web Conference. 2019. p. 1465-1475.
