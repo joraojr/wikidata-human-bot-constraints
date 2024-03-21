@@ -39,5 +39,72 @@ Our hypotheses is that human users have a more active role to fix constraint vio
 
 ## Investigation and testing
 
+### Humans x Bots
+
+To investigate **RQ2**, we took the Single-value constraint as a target and investigated its repairs. Unfortunately, the repairs dataset
+does not contain any information regarding the user behind the repair, however, the revision ID stored in the second column of the repair files can be used to retrieve the respective user. Every revision ID has one correspondent user in Wikidata. Therefore, we developed a users extractor R script to first create a proper URL from the revision ID and then send a HTTP request to Wikidata retrieving a HTML page that is further parsed into an object in order to retrieve the user ID. The main challenge here is to manage number of requests to not overwhelm the server's capacity, leading to a denial of service. After retrieving almost 370k users using the script available in "users_extractor.R", we analized the file "users_constraint-corrections_single.tsv".
+
+We first read the file containing the extracted users:
+
+```{r}
+# Set the path to the users TSV file
+users_file_path <- "users_constraint-corrections_single.tsv"
+
+# Read the TSV file
+data <- read.table(users_file_path, sep = "\t", header = FALSE)
+col.names = c("Column1", "Column2")
+colnames(data) <- col.names
+```
+
+Next, we initialize the counters and check the number of total users:
+
+```{r}
+dim(data) # Initialize counters
+total_rows <- nrow(data)
+bot_substring_count <- 0
+non_bot_substring_count <- 0
+```
+
+Then the file is iterated to count how many user names have "bot" as a substring, since all bots in Wikidata have this pattern.
+```{r}
+for (row in 1:total_rows) {
+  # Check if "bot" is a substring in the second column using grep
+  if (grepl("bot", data$Column2[row], ignore.case = TRUE)) {
+    bot_substring_count <- bot_substring_count + 1
+  } else {
+    non_bot_substring_count <- non_bot_substring_count + 1
+  }
+}
+```
+
+We calculate the percentage of humans and bots related to the total.
+```{r}
+# Calculate percentages
+bot_percentage <- (bot_substring_count / total_rows) * 100
+non_bot_percentage <- (non_bot_substring_count / total_rows) * 100
+
+# Print the results
+cat("Number of rows:", total_rows, "\n")
+cat("Number of strings in the second column with 'bot' as a substring:", bot_substring_count, "(", round(bot_percentage, 2), "%)\n")
+cat("Number of strings in the second column without 'bot' as a substring:", non_bot_substring_count, "(", round(non_bot_percentage, 2), "%)\n")
+
+```
+
+Finally, we can plot a pie chart with the share of users and bots that performed repairs for the Single-value constraint:
+```{r}
+if (!requireNamespace("scales", quietly = TRUE)) {
+  install.packages("scales")
+}
+library(scales)
+# Generate a pie chart
+pie_counts <- c(bot_substring_count, non_bot_substring_count)
+pie_labels <- c(paste("Bot Substring Count (", round(bot_percentage, 2), "%)"),
+                paste("Non-Bot Substring Count (", round(non_bot_percentage, 2), "%)"))
+# Create a pie chart with percentages
+pie(pie_counts, labels = pie_labels, main = "Share of Bots x Humans - Single-value constraint", col = c("red", "green"))
+```
+
+Our preliminary results show that around 66% of the repairs for this given constraint type are done by human users...
+
 ## Conclusion
 
