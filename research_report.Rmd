@@ -89,25 +89,27 @@ downloaded](https://figshare.com/articles/dataset/Wikidata_Constraints_Violation
 The provided data presents a breakdown of historical repairs performed
 in Wikidata across various constraint types. Each constraint type
 represents a specific rule or condition that data within Wikidata must
-adhere to. This dataset contains 9 different types of contrains:
+adhere to. This dataset contains 9 different types of constraints. Consider a Wikidata statement in the form of item-property-value (e.g. Vienna-CapitalOf-Austria), the analysed constraints can be described as:
 
--   One-of: TBA @nicolas
+-   One-of: Only the specified values are allowed for the property.
 
--   Single-Value: TBA @nicolas
+-   Single-Value: The property generally only has a single value for an item.
 
--   ConflictsWith: TBA @nicolas
+-   ConflictsWith: Items using this property should not have a certain other statement.
 
--   Distinct values: TBA @nicolas
+-   Distinct values: Values for this property should be unique across all of Wikidata, and no other entity should have the same value in a statement
+for this property.
 
--   Inverse: TBA @nicolas
+-   Inverse: The property has an inverse property, and values for the property should have a statement with the inverse property pointing back to the
+original item.
 
--   ValueRequiresStatem: TBA @nicolas
+-   ValueRequiresStatement: Values for this property should have a certain other statement.
 
--   ValueType: TBA @nicolas
+-   ValueType: The referenced item should be a subclass or instance of the given type.
 
--   Type: TBA @nicolas
+-   Type: Items with the specified property should have the given type.
 
--   ItemRequiresStatement: TBA @nicolas
+-   ItemRequiresStatement: Items using this property should have a certain other statement.
 
 The repairs can be of 2 types: deletion and additions:
 
