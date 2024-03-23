@@ -89,27 +89,36 @@ downloaded](https://figshare.com/articles/dataset/Wikidata_Constraints_Violation
 The provided data presents a breakdown of historical repairs performed
 in Wikidata across various constraint types. Each constraint type
 represents a specific rule or condition that data within Wikidata must
-adhere to. This dataset contains 9 different types of constraints. Consider a Wikidata statement in the form of item-property-value (e.g. Vienna-CapitalOf-Austria), the analysed constraints can be described as:
+adhere to. This dataset contains 9 different types of constraints.
+Consider a Wikidata statement in the form of item-property-value (e.g.
+Vienna-CapitalOf-Austria), the analysed constraints can be described as:
 
 -   One-of: Only the specified values are allowed for the property.
 
--   Single-Value: The property generally only has a single value for an item.
+-   Single-Value: The property generally only has a single value for an
+    item.
 
--   ConflictsWith: Items using this property should not have a certain other statement.
+-   ConflictsWith: Items using this property should not have a certain
+    other statement.
 
--   Distinct values: Values for this property should be unique across all of Wikidata, and no other entity should have the same value in a statement
-for this property.
+-   Distinct values: Values for this property should be unique across
+    all of Wikidata, and no other entity should have the same value in a
+    statement for this property.
 
--   Inverse: The property has an inverse property, and values for the property should have a statement with the inverse property pointing back to the
-original item.
+-   Inverse: The property has an inverse property, and values for the
+    property should have a statement with the inverse property pointing
+    back to the original item.
 
--   ValueRequiresStatement: Values for this property should have a certain other statement.
+-   ValueRequiresStatement: Values for this property should have a
+    certain other statement.
 
--   ValueType: The referenced item should be a subclass or instance of the given type.
+-   ValueType: The referenced item should be a subclass or instance of
+    the given type.
 
 -   Type: Items with the specified property should have the given type.
 
--   ItemRequiresStatement: Items using this property should have a certain other statement.
+-   ItemRequiresStatement: Items using this property should have a
+    certain other statement.
 
 The repairs can be of 2 types: deletion and additions:
 
@@ -136,6 +145,367 @@ data errors for each constraint type:
 | ItemRequiresStatement  | 357938         | 15474644       |
 
 ## Investigation and testing
+
+### Prediction model
+
+To investigate **RQ1**, we used a multinomial logistic regression model.
+In the context of this work, this model can be utilized to predict the
+action type (deletion, addition, or revalidation) based on the
+constraint type in a given dataset. In this context, the classes of
+constraint types considered are One-Of, ConflictsWith, Inverse, and
+Single-Value.
+
+Multinomial logistic regression extends the concept of logistic
+regression to handle scenarios with more than two discrete outcome
+classes. In our case, the outcome classes are the action types
+associated with each constraint type. The dependent variable, or the
+outcome variable, represents the action type, while the independent
+variables, or predictors, are the constraint types.
+
+The model aims to estimate the probabilities of each action type
+(deletion, addition, or revalidation) given the constraint type. It does
+so by fitting a separate logistic regression model for each action type,
+and comparing it against a reference category (typically chosen as the
+base outcome). The coefficients estimated by the model provide insights
+into the relationship between the constraint types and the likelihood of
+each action type occurring.
+
+To train and evaluate our model, we followed the steps below:
+
+```{r, echo=FALSE}
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+if (!require("data.table")) install.packages("data.table"); library("data.table")
+if (!require("nnet")) install.packages("nnet"); library("nnet")
+if (!require("caret")) install.packages("caret"); library("caret")
+```
+
+```{r}
+set.seed(123)  # Set seed for reproducibility
+split_ratio <- 0.8  # 80% for training, 20% for testing
+
+```
+
+We first pre-processed the data. We created a class called REVALIDATION.
+For this work, REVALIDATION is a constraint type that needs to process
+both action types DELETION and ADDITION. To check a bit more of the
+pre-processing, please take a look at the "T2- Preprocessing" Rmd file.
+
+Here we load the data after the pre-processing:
+
+```{r}
+df <-  subset(unique(
+  read.csv(
+    "preprocessed_file_final.tsv",
+    sep = "\t",
+    header = TRUE,
+    col.names = c(
+      "subject",
+      "property",
+      "type",
+      "total_actions",
+      "action_category"
+    )
+  )
+),
+type != "REVALIDATION" & type != "")
+
+```
+
+First glance at the data we had:
+
+```{r}
+apply(df, 2, function(x) length(unique(x)))
+
+```
+
+```{r}
+table(df$action_category)
+table(df$type)
+
+```
+
+```{r}
+# Assuming df is your data frame
+# Assuming df is your data frame
+table_action_category <- table(df$action_category)
+table_type <- table(df$type)
+
+# Plot bar chart for action_category
+barplot(table_action_category, main = "Distribution of Actions", col = "lightblue", xlab = "Action", ylab = "Total",)
+
+# Plot bar chart for type
+barplot(table_type, main = "Distribution of Constraints Types (Log-Log Scale)", col = "lightgreen", xlab = "Constraint Type", ylab = "Total", log="y")
+```
+
+From the previous data is possible to see that we have a huge amount of
+data. The classes are imbalanced, i.e., the amount of data spread among
+the classes is not equal. This can be a problem for our model since
+imbalanced that can confuse our data and prioritize one class above the
+others.
+
+Now we analyze the relation between the actions type and constrains
+types:
+
+```{r}
+# Assuming df is your dataset
+# Assuming action_category and type are factors in your dataset
+
+# Create a table of frequencies
+table_data <- table(df$action_category,df$type)
+
+# Bar plot
+barplot(table_data, beside = TRUE, legend.text = TRUE, col = c("lightblue", "lightgreen","lightgray"),
+        main = "Action vs. Constraint Type",
+        xlab = "action_category", ylab = "Frequency")
+```
+
+Is possible to see that the inverse class contains the majority of the
+addition steps. Besides that, the constraint oneOf is the one with a
+lower number of instances. SingleValue and conclictsWith are quite
+similar in terms of data distribution.
+
+Let's now check if the is any significant difference among the classes
+and the action types. To do that we ran a chi-squared test:
+
+```{r}
+chisq.test(df$action_category,df$type)
+
+
+```
+
+From the p-value is possible to confirm that there is a significant
+difference among the classes. Therefore, highlights to us the we can
+continue with our prediction model.
+
+Now we divide our model into training and testing sets. We performed it
+in a stratified way since we had already checked that our data was not
+balanced. The stratified sampling helps to preserve the percentage of
+data of each class during the splitting of training and testing sets.
+
+```{r}
+# Stratified sampling based on 'type' and 'action_category'
+df <- df %>%
+  group_by(type, action_category) %>%
+  sample_n(size = 0.1 * n()) %>%
+  ungroup()
+```
+
+Double-checking the data distribution:
+
+```{r}
+# Check the distribution of 'type' and 'action_category' in the subsample
+table(df$action_category)
+table(df$type)
+
+```
+
+```{r}
+
+# num_rows <- nrow(df)
+# train_indices <- sample(1:num_rows, round(split_ratio * num_rows))
+# train_data <- df[train_indices, ]
+# test_data <- df[-train_indices, ]
+
+# Create a list of data frames
+stratified_groups <- df %>%
+  group_split(type, action_category)
+
+# Sample per group 
+sample_within_group <- function(group_df, split_ratio) {
+  num_rows <- nrow(group_df)
+  train_indices <- sample(1:num_rows, round(split_ratio * num_rows))
+  train_data <- group_df[train_indices, ]
+  test_data <- group_df[-train_indices, ]
+  list(train_data = train_data, test_data = test_data)
+}
+
+# Apply the function to each group
+stratified_samples <- lapply(stratified_groups, sample_within_group, split_ratio)
+
+# Combine the sampled groups back into a single data frame for both training and testing
+train_data <- do.call(rbind, lapply(stratified_samples, function(x) x$train_data))
+test_data <- do.call(rbind, lapply(stratified_samples, function(x) x$test_data))
+
+```
+
+Double-checking our training and testing sets:
+
+```{r}
+print("Train")
+table(train_data$action_category)
+table(train_data$type)
+
+print("Test")
+table(test_data$action_category)
+table(test_data$type)
+```
+
+```{r}
+# Create tables of frequencies for action_category and type in both datasets
+table_action_category <- rbind(table(train_data$action_category), table(test_data$action_category))
+table_type <- rbind(table(train_data$type), table(test_data$type))
+
+# Calculate percentages
+percent_action_category <- prop.table(table_action_category, margin = 2) * 100
+percent_type <- prop.table(table_type, margin = 2) * 100
+
+# Plot stacked bar chart for action_category
+barplot(percent_action_category, col = c("lightblue", "lightgreen"),
+        legend.text = TRUE, args.legend = list(x = "topright", bty = "n"),
+        main = "Train/Test - Action Percentagem",
+        xlab = "Action Category", ylab = "Percentage")
+
+# Plot stacked bar chart for type
+barplot(percent_type, col = c("lightblue", "lightgreen"),
+        legend.text = TRUE, args.legend = list(x = "topright", bty = "n"),
+        main = "Train/Test - Type Percentagem",
+        xlab = "Type", ylab = "Percentage")
+
+
+```
+
+From the chart above, we can see that we were able to split our data
+carefully among the classes. The percentage of data is preserved and now
+we are ready to build or model.
+
+```{r}
+
+# multinom_model <- multinom(action_category ~ subject + property + type + total_actions, data = train_data, nthreads = 4)
+multinom_model <- multinom(action_category ~ type , data = train_data, nthreads = 4)
+
+
+```
+
+We first tried to run the model using multiple independent variables
+(subject, property, and type). However, the model was too big to run on
+a local machine. Therefore, we only selected the action type as the
+dependable variable and the type of the constraint as the independent
+variable.
+
+Summary of our model:
+
+```{r}
+summary(multinom_model)
+```
+
+Let's now evaluate how the model residuals are:
+
+```{r}
+# Obtain deviance residuals
+residuals <- residuals(multinom_model, type = "deviance")
+
+# Create a residual plot
+par(mfrow = c(2, 2))  # Set up a 2x2 layout for multiple plots
+
+# Get unique values of the response variable (action_category)
+response_levels <- unique(train_data$action_category)
+
+# Create a residual plot for each category
+for (i in response_levels) {
+  subset_residuals <- residuals[train_data$action_category == i]
+  plot(fitted(multinom_model)[train_data$action_category == i], subset_residuals,
+       main = paste("Residuals vs Fitted for", i),
+       xlab = "Fitted Values", ylab = "Deviance Residuals")
+  abline(h = 0, col = "red", lty = 2)  # Add a horizontal line at y = 0
+}
+
+# Plot a histogram of deviance residuals
+hist(residuals, main = "Histogram of Deviance Residuals", xlab = "Deviance Residuals")
+abline(v = 0, col = "red", lty = 2)  # Add a vertical line at x = 0
+
+```
+
+```{r}
+# Get the coefficients
+coefficients <- coef(multinom_model)
+
+# Exponentiate the coefficients to obtain odds ratios
+odds_ratios <- exp(coefficients)
+
+# Print or view the odds ratios
+print(odds_ratios)
+```
+
+The final step was to verify if our prediction model was performing well
+with our testing dataset. To do that, we plot our confusion matrix
+below:
+
+```{r}
+
+# probabilities <- predict(multinom_model, newdata = test_data, type = "response")
+# predictions <- ifelse(probabilities > 0.5, "ADD", "DELETE")  # Adjust threshold as needed
+
+
+# Make predictions on the test set
+predictions <- predict(multinom_model, newdata = test_data, type = "class")
+
+# Evaluate the model
+conf_matrix <- confusionMatrix(predictions, as.factor(test_data$action_category))
+print(conf_matrix)
+
+```
+
+```{r}
+
+conf_matrix_df= as.data.frame(conf_matrix$table)
+ggplot(conf_matrix_df, aes(Reference, Prediction, fill = Freq)) +
+  geom_tile(color = "white", size = 0.5) +
+  geom_text(aes(label = Freq), vjust = 1, color = "black", size = 4) +
+  scale_fill_gradient(low = "#EFEFEF", high = "#009194") +
+  labs(x = "Predicted Class", y = "True Class",
+       title = "Confusion Matrix",
+       subtitle = "Multinomial Logistic Regression") +
+  theme_minimal(base_size = 16) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "#F4F4F4"),
+        legend.position = "right")
+
+
+
+```
+
+```{r}
+# Create a data frame from the confusion matrix table
+conf_matrix_df <- as.data.frame(conf_matrix$table)
+
+# Convert the frequencies to percentages within each row
+conf_matrix_df_percentage <- conf_matrix_df %>%
+  group_by(Prediction) %>%
+  mutate(Percentage = Freq / sum(Freq) * 100) %>%
+  ungroup()
+
+# Plot the confusion matrix heatmap with row-wise percentage annotations
+ggplot(conf_matrix_df_percentage, aes(Reference, Prediction, fill = Percentage)) +
+  geom_tile(color = "white", size = 0.5) +
+  geom_text(aes(label = paste0(round(Percentage, 1), "%")), vjust = 1, color = "black", size = 4) +
+  scale_fill_gradient(low = "#EFEFEF", high = "#009194") +
+  labs(x = "Predicted Class", y = "True Class",
+       title = "Confusion Matrix",
+       subtitle = "Multinomial Logistic Regression") +
+  theme_minimal(base_size = 16) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_rect(fill = "#F4F4F4"),
+        legend.position = "right")
+```
+
+The model is very good in predicting addition as addition. However, it
+gets confused when it's necessary to classify deletion as deletion and
+revalidation and revalidation.
+
+The final f1 score for the whole model is the following:
+
+```{r}
+f1_score <- conf_matrix$byClass[, "F1"]
+f1_score
+```
+
+After this data exploration, we conclude that our 1st model can predict
+the steps necessary to fix these constraints. The f1-score and the
+confusion matrix confirm these results.
 
 ### Humans x Bots
 
