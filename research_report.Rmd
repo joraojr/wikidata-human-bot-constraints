@@ -71,7 +71,8 @@ constraint based on its type?
 Wikidata?
 
 Our hypotheses is that human users have a more active role to fix
-constraint violations than bots, which can be used
+constraint violations than bots, which are mostly used to perform fixed routines to update data.
+All the data created by us in this project is available on [GitHub](https://github.com/joraojr/wikidata-human-bot-constraints).
 
 ## Data collection
 
@@ -81,7 +82,7 @@ In our case, we are interested in a statistical analysis over this data.
 The dataset contains 67M past corrections collected until July, 2018 for
 ten different Wikidata constraint types.
 
-All the data can be [freely
+All the data from the paper can be [freely
 downloaded](https://figshare.com/articles/dataset/Wikidata_Constraints_Violations_-_July_2017/7712720)
 
 ## Descriptive analysis
@@ -127,7 +128,7 @@ The repairs can be of 2 types: deletion and additions:
     wrongly inserted by a user.
 
 -   Addition repairs occur when a piece of information is missing and a
-    user needs to add this new information to repair the constraint.
+    user needs to add this new information to repair the constraint violation.
 
 The table displays the number of deletions and additions made to correct
 data errors for each constraint type:
@@ -225,7 +226,7 @@ table(df$type)
 ```
 
 ```{r}
-# Assuming df is your data frame
+cccch# Assuming df is your data frame
 # Assuming df is your data frame
 table_action_category <- table(df$action_category)
 table_type <- table(df$type)
@@ -515,7 +516,7 @@ not contain any information regarding the user behind the repair,
 however, the revision ID stored in the second column of the repair files
 can be used to retrieve the respective user. Every revision ID has one
 correspondent user in Wikidata. Therefore, we developed a users
-extractor R script to first create a proper URL from the revision ID and
+[extractor](https://github.com/joraojr/wikidata-human-bot-constraints/blob/main/users_extractor.R) R script to first create a proper URL from the revision ID and
 then send a HTTP request to Wikidata retrieving a HTML page that is
 further parsed into an object in order to retrieve the user ID. The main
 challenge here is to manage number of requests to not overwhelm the
@@ -589,9 +590,28 @@ pie(pie_counts, labels = pie_labels, main = "Share of Bots x Humans - Single-val
 ```
 
 Our preliminary results show that around 66% of the repairs for this
-given constraint type are done by human users...
+given constraint type are done by human users suggesting that the hypothesis for **RQ2** is valid for the single-value constraint.
+
+```{r}
+# Count occurrences of each unique value in the second column
+value_counts <- table(data$Column2)
+
+# Rank the top 10 most frequent values
+top_10_values <- head(sort(value_counts, decreasing = TRUE), 10)
+
+# Print the total occurrences and top 10 most frequent values
+cat("Total occurrences of values in the second column:", sum(value_counts), "\n")
+cat("Top 10 most frequent values in the second column:\n")
+print(top_10_values)
+```
+
+The top 10 users who did most repairs shows that 4 out of the 10 most contributors are bots. In a future step, a detailed analysis on repair patterns of each user can determine if the humans are performing repairs across different knowledge domains while bots are executing routine repairs. What is certain for now is that the most contributor is a bot named KrBot and it has twice the amount of repairs compared to the second most contributor which is a human.
 
 ## Conclusion
+
+In this research project, we investigated repair patters of historical edits in Wikidata. We have partially extended a published dataset including information on the users behind the repairs. Our first analysis indicates that the model is good in predicting addition repairs, and that 66% of the repairs performed for a subset of the single-value constraint repairs are done by humans. 
+
+Some of the main challenges we faced are related to the server capacity in handling multiple http requests to get the users and the definition of the features we used to train the prediction model. Our conclusion for **RQ2** is limited to the context of the single-value constraint and requires more information if one would like to make any general assertion about the overall behavior for the whole dataset. Regarding the features used to train the model, more information about the actual entities could be beneficial to generate more features to improve the accuracy, such as incorporating class hierarchy and adding more contextual information about the domain knowledge of each repair.
 
 ## References
 
